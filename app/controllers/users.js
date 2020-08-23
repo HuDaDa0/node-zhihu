@@ -1,28 +1,66 @@
-const db = [{ name: '李磊' }];
+const jsonwebtoken = require('jsonwebtoken');
+
+const User = require('../models/users');
+const secret = require('../config');
+
 
 class UserCtl {
-  find(ctx) {
-    ctx.body = db;
+  async find(ctx) {
+    ctx.body = await User.find();
   }
-  findById(ctx) {
-    ctx.body = db[ctx.params.id * 1];
+  async findById(ctx) {
+    const user = await User.findById(ctx.params.id);
+    if (!user) {
+      ctx.throw(404, '用户不存在');
+    }
+    ctx.body = user
   }
-  create(ctx) {
+  async create(ctx) {
     // 使用了 koa-parameter 库，在全局注册 app.use(parameter(app))
     // 自动校验参数
     ctx.verifyParams({
       name: { type: 'string', require: true },
-      age: { type: 'number', require: true }
+      password: { type: 'string', require: true }
     });
-    db.push(ctx.request.body);
-    ctx.body = ctx.request.body;
+    const { name } = ctx.request.body;
+    const isRepeatUser = await User.findOne({ name });
+    if (isRepeatUser) {
+      ctx.throw(409, '用户已经存在');
+    }
+    const user = await new User(ctx.request.body).save();
+    ctx.body = user;
   }
-  update(ctx) {
-    db[ctx.params.id * 1] = ctx.params.body;
+  async update(ctx) {
+    ctx.vertiyParams({
+      name: { type: 'string', require: false },
+      password: { type: 'string', require: false }
+    });
+    const user = await User.findByIdAndUpdate(ctx.params.id, ctx.request.body);
+    if (!user) {
+      ctx.throw(404, '用户不存在');
+    }
+    ctx.body = user;
   }
-  delete(ctx) {
-    db.split(ctx.params.id * 1, 1);
+  async delete(ctx) {
+    const user = await User.findByIdAndRemove(ctx.params.id);
+    if(!user) {
+      ctx.throw(404, '用户不存在');
+    }
     ctx.status = 204;
+  }
+  async login(ctx) {
+    ctx.verifyParams({
+      name: { type: 'string', require: true },
+      password: { type: 'string', require: true }
+    });
+    const user = User.findOne(ctx.request.body);
+    if (!user) {
+      ctx.throw(401, '用户名和密码不正确');
+    }
+    const { _id, name } = user;
+    // expiresIn: '1d'  过期时间
+    const token = jsonwebtoken.sign({ _id, name }, secret, { expiresIn: '1d' });
+    ctx.body = { token };
   }
 }
 
