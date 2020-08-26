@@ -19,8 +19,8 @@ class UserCtl {
     // 使用了 koa-parameter 库，在全局注册 app.use(parameter(app))
     // 自动校验参数
     ctx.verifyParams({
-      name: { type: 'string', require: true },
-      password: { type: 'string', require: true }
+      name: { type: 'string', required: true },
+      password: { type: 'string', required: true }
     });
     const { name } = ctx.request.body;
     const isRepeatUser = await User.findOne({ name });
@@ -31,9 +31,9 @@ class UserCtl {
     ctx.body = user;
   }
   async update(ctx) {
-    ctx.vertiyParams({
-      name: { type: 'string', require: false },
-      password: { type: 'string', require: false }
+    ctx.verifyParams({
+      name: { type: 'string', required: false },
+      password: { type: 'string', required: false }
     });
     const user = await User.findByIdAndUpdate(ctx.params.id, ctx.request.body);
     if (!user) {
@@ -48,16 +48,23 @@ class UserCtl {
     }
     ctx.status = 204;
   }
+  async checkOwner(ctx, next) {
+    // 验证用户是不是当前登录的用户，这样才能进行 更新 和 删除 用户自己的信息
+    if (ctx.params.id !== ctx.state.user._id) ctx.throw(403, '没有权限')
+    await next()
+  }
   async login(ctx) {
     ctx.verifyParams({
-      name: { type: 'string', require: true },
-      password: { type: 'string', require: true }
+      name: { type: 'string', required: true },
+      password: { type: 'string', required: true }
     });
-    const user = User.findOne(ctx.request.body);
+    const user = await User.findOne(ctx.request.body);
     if (!user) {
       ctx.throw(401, '用户名和密码不正确');
     }
     const { _id, name } = user;
+    console.log(user, '======user==========')
+
     // expiresIn: '1d'  过期时间
     const token = jsonwebtoken.sign({ _id, name }, secret, { expiresIn: '1d' });
     ctx.body = { token };
