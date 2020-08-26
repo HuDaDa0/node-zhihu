@@ -1,7 +1,7 @@
 const jsonwebtoken = require('jsonwebtoken');
 
 const User = require('../models/users');
-const secret = require('../config');
+const { secret } = require('../config');
 
 
 class UserCtl {
