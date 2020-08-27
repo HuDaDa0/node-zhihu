@@ -1,6 +1,7 @@
 const Koa = require('koa');
 const koaBody = require('koa-body');
 const error = require('koa-json-error');
+const koaStatic = require('koa-static');
 const parameter = require('koa-parameter');
 const mongoos = require('mongoose');
 const path = require('path');
@@ -12,6 +13,7 @@ mongoos.connect(connectStr, { useUnifiedTopology: true }, (e) => { console.log('
 mongoos.connection.on('error', () => { console.log('连接错误') });
 
 
+app.use(koaStatic(path.join(__dirname, 'public')));
 app.use(error({
   postFormat: (e, { stack, ...rest }) => process.env.NODE_ENV === 'production'? rest: { stack, ...rest } 
 }));
