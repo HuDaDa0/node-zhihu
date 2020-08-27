@@ -1,8 +1,9 @@
 const Koa = require('koa');
-const bodyparser = require('koa-bodyparser');
+const koaBody = require('koa-body');
 const error = require('koa-json-error');
 const parameter = require('koa-parameter');
 const mongoos = require('mongoose');
+const path = require('path');
 
 const routing = require('./routers');
 const { connectStr } = require('./config'); 
@@ -14,7 +15,13 @@ mongoos.connection.on('error', () => { console.log('连接错误') });
 app.use(error({
   postFormat: (e, { stack, ...rest }) => process.env.NODE_ENV === 'production'? rest: { stack, ...rest } 
 }));
-app.use(bodyparser());
+app.use(koaBody({
+  multipart: true,
+  formidable: {
+    uploadDir: path.join(__dirname, '/public/uploads'),
+    keepExtensions: true  // 保留扩展名，图像文件的.jpg  .png 之类的
+  }
+}));
 // 校验请求体参数的  传入app，这样就会全局注册校验方法 
 // 在ctx上面注册一个 vertifyParams 
 app.use(parameter(app));  
