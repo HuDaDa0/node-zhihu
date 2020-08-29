@@ -6,7 +6,10 @@ const { secret } = require('../config');
 
 class UserCtl {
   async find(ctx) {
-    ctx.body = await User.find({ name: new RegExp(c.query.q) });
+    const { per_page = 10, page = 1 } = ctx.query;
+    page = Math.max(page, 1) - 1;
+    per_page = Math.max(per_page * 1, 1);
+    ctx.body = await User.find({ name: new RegExp(c.query.q) }).limit(per_page).skip(per_page * page);
   }
   async findById(ctx) {
     const { fields } = ctx.query;
