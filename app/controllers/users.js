@@ -6,7 +6,7 @@ const { secret } = require('../config');
 
 class UserCtl {
   async find(ctx) {
-    ctx.body = await User.find();
+    ctx.body = await User.find({ name: new RegExp(c.query.q) });
   }
   async findById(ctx) {
     const { fields } = ctx.query;
