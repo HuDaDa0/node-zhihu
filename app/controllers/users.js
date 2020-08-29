@@ -9,7 +9,11 @@ class UserCtl {
     ctx.body = await User.find();
   }
   async findById(ctx) {
-    const user = await User.findById(ctx.params.id);
+    const { fields } = ctx.query;
+    // 如果是空数组，就过滤掉 查询参数是fileds=xxxx;xxx;xxx;xx  
+    // 意思就是 只查询这几个参数
+    const selectFields = fields.split(';').filter(f => f).map(item => ' +' + item).join('')
+    const user = await User.findById(ctx.params.id).select(selectFields);
     if (!user) {
       ctx.throw(404, '用户不存在');
     }
@@ -33,7 +37,14 @@ class UserCtl {
   async update(ctx) {
     ctx.verifyParams({
       name: { type: 'string', required: false },
-      password: { type: 'string', required: false }
+      password: { type: 'string', required: false },
+      avatar_url: { type: 'string', required: false },
+      gender: { type: 'string', required: false },
+      headline: { type: 'string', required: false },
+      locations: { type: 'array', itemType: 'string', required: false },
+      business: { type: 'string', required: false },
+      employments: { type: 'array', itemType: 'object', required: false },
+      educations: { type: 'array', itemType: 'object', required: false }
     });
     const user = await User.findByIdAndUpdate(ctx.params.id, ctx.request.body);
     if (!user) {
