@@ -74,11 +74,47 @@ class UserCtl {
       ctx.throw(401, '用户名和密码不正确');
     }
     const { _id, name } = user;
-    console.log(user, '======user==========')
-
     // expiresIn: '1d'  过期时间
     const token = jsonwebtoken.sign({ _id, name }, secret, { expiresIn: '1d' });
     ctx.body = { token };
+  }
+  async listFollowing(ctx) {
+    const user = await User.findById(ctx.params.id).select('+following');
+    if (!user) ctx.throw(404);
+    // 返回关注列表
+    ctx.body = user.following;
+  }
+  // 粉丝列表
+  async listFollowers(ctx) {
+    const followers = await User.find({ following: ctx.params.id });
+    ctx.body = followers;
+  }
+  // 中间件，简单用户是否存在
+  async checkUserExist(ctx, next) {
+    const user = await User.findById(ctx.params.id);
+    if (!user) {
+      ctx.throw('404', '用户不存在');
+    }
+    await next()
+  }
+  // 关注
+  async follow(ctx) {
+    // ctx.state.user._id  是jwt验证登录成功后绑定在ctx.state上的属性
+    const me = await User.findById(ctx.state.user._id).select('+following');
+    if (!me.following.map(item => item.toString()).includes(ctx.params.id)) {
+      me.following.push(ctx.params.id);
+      me.save();
+    }
+    me.statue = 204;
+  }
+  async unfollow(ctx) {
+    const me = await User.findById(ctx.state.user._id).select('+following');
+    const index = me.following.map(item => item.toString()).indexOf(ctx.params.id);
+    if (index > -1) {
+      me.following.splice(index, 1);
+      me.save();
+    }
+    ctx.status = 204;
   }
 }
 

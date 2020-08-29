@@ -28,6 +28,11 @@ const userSchema = new Schema({
       }
 
     ]
+  },
+  following: {
+    // 存储id，ref=User id是User表中的id  关注列表
+    type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    select: false
   }
 });
 
